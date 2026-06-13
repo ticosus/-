@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>台股 AI 決策系統 V2</title>
+  <style>
+    body { background: #0d1117; color: #c9d1d9; font-family: sans-serif; padding: 20px; margin: 0; }
+    .box { max-width: 500px; margin: 0 auto; }
+    input, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
+    input { background: #161b22; border: 1px solid #30363d; color: #fff; }
+    button { background: #238636; color: #fff; border: none; font-weight: bold; cursor: pointer; }
+    .card { background: #161b22; border: 1px solid #30363d; padding: 15px; border-radius: 8px; margin-top: 15px; line-height: 1.6; }
+    .bullish { border-left: 5px solid #ff4d4d; }
+    .bearish { border-left: 5px solid #2ecc71; }
+    .badge { display: inline-block; padding: 4px 8px; background: #21262d; border-radius: 4px; font-weight: bold; margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h2>📊 台股 AI 決策系統 V2</h2>
+    <input id="code" placeholder="請輸入股票代碼 (例如: 2330)">
+    <button onclick="run()">開始 AI 量化分析</button>
+    <div id="out"></div>
+  </div>
+
+  <script>
+    async function run() {
+      const code = document.getElementById("code").value.trim();
+      const out = document.getElementById("out");
+      if(!code) return alert("請輸入代碼");
+      out.innerHTML = "<p style='color:#e1b12c;'>🔍 AI 正在計算技術指標與風控報告...</p>";
+      try {
+        const res = await fetch(`/api/stock/${code}`);
+        const data = await res.json();
+        if(!data.success) { out.innerHTML = `<p style="color:#ff4d4d;">❌ 錯誤: ${data.error}</p>`; return; }
+        const ai = data.ai;
+        const isBull = ai.bias.toLowerCase() === 'bullish';
+        out.innerHTML = `
+          <div class="card">
+            <h3>📈 技術指標數據</h3>
+            <p>當前現價：<b>${data.last.toFixed(2)} 元</b></p>
+            <p>RSI (14)：${data.rsi.toFixed(2)} | MACD：${data.macd.toFixed(2)}</p>
+            <p>MA5：${data.ma5.toFixed(2)} | MA20：${data.ma20.toFixed(2)}</p>
+          </div>
+          <div class="card ${isBull ? 'bullish' : 'bearish'}">
+            <h3>🤖 AI 決策報告</h3>
+            <div class="badge" style="color:${isBull ? '#ff4d4d':'#2ecc71'}">${isBull ? '看多 (Bullish)' : '看空 (Bearish)'}</div>
+            <p><b>分析原因：</b>${ai.reason}</p>
+            <p><b>關鍵支撐：</b><span style="color:#ff4d4d; font-weight:bold;">${ai.support}</span></p>
+            <p><b>關鍵壓力：</b><span style="color:#58a6ff; font-weight:bold;">${ai.resistance}</span></p>
+            <p><b>風險提示：</b>${ai.risk}</p>
+          </div>
+        `;
+      } catch(e) {
+        out.innerHTML = `<p style="color:#ff4d4d;">❌ 連線失敗: ${e.message}</p>`;
+      }
+    }
+  </script>
+</body>
+</html>
